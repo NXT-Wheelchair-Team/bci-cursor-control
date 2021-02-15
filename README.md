@@ -12,5 +12,13 @@ subjects to become comfortable with motor-imagery based BCI control.
 
 ## Setup
 
+### Conda and Pipenv
+
+This Python code for this project utilizes both Conda and Pip to manage packages. Conda is the preferred default for 
+package installation, with pip used for any Python packages hosted on PyPy. Pipenv provides a package management 
+layer on top of the Pip installer, enabling dependency locking for deterministic dependency trees.
+
+### LFS
+
 This repository utilizes Git Large File Storage (LFS) to manage large data files containing biosensor data. You 
 should download and install [Git LFS](https://git-lfs.github.com/) if you wish to access the data files.
