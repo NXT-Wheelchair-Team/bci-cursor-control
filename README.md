@@ -15,7 +15,7 @@ subjects to become comfortable with motor-imagery based BCI control.
 ### Conda and Pipenv
 
 This Python code for this project utilizes both Conda and Pip to manage packages. Conda is the preferred default for 
-package installation, with pip used for any Python packages hosted on PyPy. Pipenv provides a package management 
+package installation, with pip used for any Python packages hosted on PyPi. Pipenv provides a package management 
 layer on top of the Pip installer, enabling dependency locking for deterministic dependency trees.
 
 ### LFS
