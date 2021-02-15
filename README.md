@@ -9,3 +9,8 @@ subjects to become comfortable with motor-imagery based BCI control.
 ## References
 
 [Control of a two-dimensional movement signal by a noninvasive brain-computer interface in humans](https://www.pnas.org/content/101/51/17849/tab-article-info)
+
+## Setup
+
+This repository utilizes Git Large File Storage (LFS) to manage large data files containing biosensor data. You 
+should download and install [Git LFS](https://git-lfs.github.com/) if you wish to access the data files.
