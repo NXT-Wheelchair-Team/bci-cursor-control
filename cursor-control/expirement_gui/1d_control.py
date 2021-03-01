@@ -133,6 +133,9 @@ class SquareTarget:
             return True
         return False
 
+    def reset(self):
+        self.canvas.itemconfig(self.id, fill="grey")
+
 
 class OneDimensionControlExperiment:
     def __init__(self):
@@ -145,14 +148,22 @@ class OneDimensionControlExperiment:
         )
         self.canvas: sg.tk.Canvas = self.window["canvas"].TKCanvas
         self.cursor = VelocityCursor(self.canvas)
-        self.cursor.move_to(Point(200, 400))
+        self.cursor_starting_point = Point(200, 400)
+        self.cursor.move_to(self.cursor_starting_point)
         self.target = SquareTarget(self.canvas, Point(200, 75))
+        self.target_reached = False
 
     def update(self):
         self.cursor.update()
         if self.target.target_reached(self.cursor.get_center()):
             self.cursor.set_velocity(0)
+            self.target_reached = True
         self.window.read(timeout=0)
+
+    def reset(self):
+        self.cursor.move_to(self.cursor_starting_point)
+        self.target.reset()
+        self.target_reached = False
 
     def close(self):
         self.window.close()
@@ -165,6 +176,10 @@ if __name__ == "__main__":
         try:
             time.sleep(0.005)
             experiment.update()
+            if experiment.target_reached:
+                time.sleep(1)
+                experiment.reset()
+                experiment.cursor.set_velocity(-60)
         except KeyboardInterrupt:
             break
     print(experiment.cursor.get_center())
