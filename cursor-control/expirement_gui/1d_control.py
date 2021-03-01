@@ -4,6 +4,8 @@ from typing import Tuple, Union
 
 import PySimpleGUI as sg
 
+DEFAULT_CURSOR_RADIUS = 10
+
 
 @dataclass
 class Point:
@@ -17,7 +19,7 @@ class Point:
 
 
 class Cursor:
-    def __init__(self, canvas: sg.tk.Canvas, radius: int = 10):
+    def __init__(self, canvas: sg.tk.Canvas, radius: int = DEFAULT_CURSOR_RADIUS):
         self.canvas = canvas
         self.radius = radius
         self.diameter = radius * 2
@@ -36,8 +38,8 @@ class Cursor:
         y = point.y if point.y is not None else self.get_center().y
 
         # shift to cursor center
-        x = x - self.radius
-        y = y - self.radius
+        x = x - self.radius - 1
+        y = y - self.radius - 1
 
         self.canvas.moveto(self.cursor, x, y)
 
@@ -47,6 +49,47 @@ class Cursor:
     def get_center(self) -> Point:
         x1, y1, x2, y2 = self.canvas.coords(self.cursor)
         return Point(x1 + self.radius, y1 + self.radius)
+
+
+class VelocityCursor(Cursor):
+    """
+    Cursor that moves over time according to its velocity in pixels per second. Uses real time (wall-clock time) so that
+    changes in updating rate (framerate) do not affect positional correctness.
+    """
+
+    # TODO support x direction
+    def __init__(self, canvas: sg.tk.Canvas, radius: int = DEFAULT_CURSOR_RADIUS):
+        super().__init__(canvas, radius)
+        self.y_velocity: int = 0  # pixels per second, negative is up, positive is down
+        self.y_center: float = (
+            self.get_center().y
+        )  # need to keep a high precision location for fractional movements
+        self.last_update_ns: Union[int, None] = None
+
+    def update(self):
+        if self.last_update_ns is None:  # first update
+            self.last_update_ns = time.time_ns()
+            return
+
+        current_ns = time.time_ns()
+        time_difference_ns = current_ns - self.last_update_ns
+        time_difference_s = self.nano_to_base(time_difference_ns)
+        pixels_to_move = time_difference_s * self.y_velocity
+        self.y_center += pixels_to_move
+        self.move_to(Point(y=int(self.y_center)))
+
+        self.last_update_ns = current_ns
+
+    def move_to(self, point: Point) -> None:
+        self.y_center = y = point.y if point.y is not None else self.get_center().y
+        super().move_to(point)
+
+    def change_velocity_by(self, y_velocity: int):
+        self.y_velocity += y_velocity
+
+    @staticmethod
+    def nano_to_base(time_ns: int) -> float:
+        return time_ns / 10e9
 
 
 class OneDimensionControlExperiment:
@@ -59,9 +102,11 @@ class OneDimensionControlExperiment:
             disable_close=True,
         )
         self.canvas: sg.tk.Canvas = self.window["canvas"].TKCanvas
-        self.cursor = Cursor(self.canvas)
+        self.cursor = VelocityCursor(self.canvas)
+        self.cursor.move_to(Point(200, 400))
 
     def update(self):
+        self.cursor.update()
         self.window.read(timeout=0)
 
     def close(self):
@@ -70,13 +115,11 @@ class OneDimensionControlExperiment:
 
 if __name__ == "__main__":
     experiment = OneDimensionControlExperiment()
-    y = 1
-    experiment.cursor.move_to(Point(x=200))
+    experiment.cursor.change_velocity_by(15)
     while True:
-        y += 0.1
-        experiment.update()
-        experiment.cursor.move_by(0, y)
-        time.sleep(0.033)
-        if y > 10:
+        try:
+            time.sleep(0.5)
+            experiment.update()
+        except KeyboardInterrupt:
             break
     print(experiment.cursor.get_center())
