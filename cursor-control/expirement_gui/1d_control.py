@@ -6,6 +6,7 @@ import logging
 import PySimpleGUI as sg
 
 DEFAULT_CURSOR_RADIUS = 10
+DEFAULT_TARGET_SIDE_LENGTH = 100
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -99,6 +100,26 @@ class VelocityCursor(Cursor):
         return time_ns / 10e8
 
 
+class SquareTarget:
+    def __init__(
+        self,
+        canvas: sg.tk.Canvas,
+        center: Point,
+        side_length: int = DEFAULT_TARGET_SIDE_LENGTH,
+    ):
+        self.canvas = canvas
+        self.side_length = side_length
+        x1, x2 = (
+            center.x - side_length / 2,
+            center.x + side_length / 2,
+        )
+        y1, y2 = (
+            center.y - side_length / 2,
+            center.y + side_length / 2,
+        )
+        self.id = self.canvas.create_rectangle(x1, y1, x2, y2, fill="grey")
+
+
 class OneDimensionControlExperiment:
     def __init__(self):
         layout = [[sg.Canvas(size=(400, 800), background_color="black", key="canvas")]]
@@ -111,6 +132,7 @@ class OneDimensionControlExperiment:
         self.canvas: sg.tk.Canvas = self.window["canvas"].TKCanvas
         self.cursor = VelocityCursor(self.canvas)
         self.cursor.move_to(Point(200, 400))
+        self.target = SquareTarget(self.canvas, Point(200, 75))
 
     def update(self):
         self.cursor.update()
@@ -122,10 +144,10 @@ class OneDimensionControlExperiment:
 
 if __name__ == "__main__":
     experiment = OneDimensionControlExperiment()
-    experiment.cursor.change_velocity_by(10)
+    experiment.cursor.change_velocity_by(15)
     while True:
         try:
-            time.sleep(0.033)
+            time.sleep(0.005)
             experiment.update()
         except KeyboardInterrupt:
             break
