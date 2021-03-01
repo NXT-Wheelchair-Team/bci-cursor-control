@@ -92,8 +92,11 @@ class VelocityCursor(Cursor):
         self.y_center = point.y if point.y is not None else self.get_center().y
         super().move_to(point)
 
-    def change_velocity_by(self, y_velocity: int):
-        self.y_velocity += y_velocity
+    def change_velocity_by(self, delta_y_velocity: int):
+        self.y_velocity += delta_y_velocity
+
+    def set_velocity(self, y_velocity: int):
+        self.y_velocity = y_velocity
 
     @staticmethod
     def nano_to_base(time_ns: int) -> float:
@@ -119,6 +122,17 @@ class SquareTarget:
         )
         self.id = self.canvas.create_rectangle(x1, y1, x2, y2, fill="grey")
 
+    def target_reached(self, point: Point, green_on_true: bool = True) -> bool:
+        """
+        Determines whether or not the provided point falls within the target box.
+        """
+        x1, y1, x2, y2 = self.canvas.coords(self.id)
+        if x1 < point.x < x2 and y1 < point.y < y2:
+            if green_on_true:
+                self.canvas.itemconfig(self.id, fill="green")
+            return True
+        return False
+
 
 class OneDimensionControlExperiment:
     def __init__(self):
@@ -136,6 +150,8 @@ class OneDimensionControlExperiment:
 
     def update(self):
         self.cursor.update()
+        if self.target.target_reached(self.cursor.get_center()):
+            self.cursor.set_velocity(0)
         self.window.read(timeout=0)
 
     def close(self):
@@ -144,7 +160,7 @@ class OneDimensionControlExperiment:
 
 if __name__ == "__main__":
     experiment = OneDimensionControlExperiment()
-    experiment.cursor.change_velocity_by(15)
+    experiment.cursor.change_velocity_by(-60)
     while True:
         try:
             time.sleep(0.005)
