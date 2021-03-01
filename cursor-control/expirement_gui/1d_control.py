@@ -28,11 +28,17 @@ class Cursor:
 
     def move_to(self, point: Point) -> None:
         """
-        Move to the specified point.
+        Move the cursor *center* to the specified point.
         :param point: a None value for x or y means the current value is retained
         """
+        # handle None value in point
         x = point.x if point.x is not None else self.get_center().x
         y = point.y if point.y is not None else self.get_center().y
+
+        # shift to cursor center
+        x = x - self.radius
+        y = y - self.radius
+
         self.canvas.moveto(self.cursor, x, y)
 
     def move_by(self, x: int = 0, y: int = 0):
