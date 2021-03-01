@@ -1,5 +1,4 @@
 import time
-from typing import List
 
 from brainflow.board_shim import BoardShim, BoardIds, BrainFlowInputParams
 from nptyping import NDArray
@@ -40,10 +39,16 @@ class BoardReader:
 
 if __name__ == "__main__":
     board = BoardReader()
-    with board:
+    with board:  # session is open and stream running within this block
         time.sleep(2.5)
         data = board.pop_board_data()  # pops all available data from buffer
         print(len(data[0]) / 250)  # ~2.5 seconds of data
         time.sleep(3)
         data = board.pop_board_data()
         print(len(data[0]) / 250)  # ~3 seconds of data
+
+    # board session and stream are now closed, but can use same object again
+    with board:
+        time.sleep(1)
+        data = board.pop_board_data()
+        print(len(data[0]) / 250)
