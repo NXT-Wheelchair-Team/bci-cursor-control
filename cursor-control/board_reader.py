@@ -1,4 +1,5 @@
 import time
+from typing import List
 
 from brainflow.board_shim import BoardShim, BoardIds, BrainFlowInputParams
 from nptyping import NDArray
@@ -32,6 +33,12 @@ class BoardReader:
         """
         return self.board.get_board_data()
 
+    def get_eeg_channels(self) -> List[int]:
+        return self.board.get_eeg_channels(self.board.board_id)
+
+    def get_sampling_rate(self) -> int:
+        return self.board.get_sampling_rate(self.board.board_id)
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.board.stop_stream()
         self.board.release_session()
@@ -52,3 +59,4 @@ if __name__ == "__main__":
         time.sleep(1)
         data = board.pop_board_data()
         print(len(data[0]) / 250)
+        print(data)
