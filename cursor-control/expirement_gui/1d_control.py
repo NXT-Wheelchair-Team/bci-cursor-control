@@ -1,10 +1,13 @@
 import time
 from dataclasses import dataclass
 from typing import Tuple, Union
+import logging
 
 import PySimpleGUI as sg
 
 DEFAULT_CURSOR_RADIUS = 10
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 @dataclass
@@ -76,12 +79,16 @@ class VelocityCursor(Cursor):
         time_difference_s = self.nano_to_base(time_difference_ns)
         pixels_to_move = time_difference_s * self.y_velocity
         self.y_center += pixels_to_move
-        self.move_to(Point(y=int(self.y_center)))
+        logging.debug(
+            f"CursorUpdate: \n\tVelocity: {self.y_velocity}\n\tTime difference: {time_difference_s} seconds\n"
+            f"\tPixels to move: {pixels_to_move}\n\tNew y-center: {self.y_center}"
+        )
+        super().move_to(Point(y=int(self.y_center)))
 
         self.last_update_ns = current_ns
 
     def move_to(self, point: Point) -> None:
-        self.y_center = y = point.y if point.y is not None else self.get_center().y
+        self.y_center = point.y if point.y is not None else self.get_center().y
         super().move_to(point)
 
     def change_velocity_by(self, y_velocity: int):
@@ -89,7 +96,7 @@ class VelocityCursor(Cursor):
 
     @staticmethod
     def nano_to_base(time_ns: int) -> float:
-        return time_ns / 10e9
+        return time_ns / 10e8
 
 
 class OneDimensionControlExperiment:
@@ -115,10 +122,10 @@ class OneDimensionControlExperiment:
 
 if __name__ == "__main__":
     experiment = OneDimensionControlExperiment()
-    experiment.cursor.change_velocity_by(15)
+    experiment.cursor.change_velocity_by(10)
     while True:
         try:
-            time.sleep(0.5)
+            time.sleep(0.033)
             experiment.update()
         except KeyboardInterrupt:
             break
