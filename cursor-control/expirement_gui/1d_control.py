@@ -1,7 +1,19 @@
 import time
-from typing import List, Tuple
+from dataclasses import dataclass
+from typing import Tuple, Union
 
 import PySimpleGUI as sg
+
+
+@dataclass
+class Point:
+    """
+    Represents a point on the 2D tk.Canvas, where (0, 0) marks the upper left corner of the canvas, right is positive x,
+     down is positive y. Integer values represent pixels.
+    """
+
+    x: Union[int, None] = None
+    y: Union[int, None] = None
 
 
 class Cursor:
@@ -12,21 +24,23 @@ class Cursor:
         self.cursor = self.canvas.create_oval(
             0, 0, self.diameter, self.diameter, fill="white"
         )
+        # self.move_by(200, 0)
 
-    def move_to(self, x: int, y: int) -> None:
+    def move_to(self, point: Point) -> None:
         """
-        Important: (0, 0) marks the upper left corner of the canvas, right is positive x, down is positive y
+        Move to the specified point.
+        :param point: a None value for x or y means the current value is retained
+        """
+        x = point.x if point.x is not None else self.get_center().x
+        y = point.y if point.y is not None else self.get_center().y
+        self.canvas.moveto(self.cursor, x, y)
 
-        :param x: x-coordinate in pixels
-        :param y: y-coordinate in pixel
-        """
+    def move_by(self, x: int = 0, y: int = 0):
         self.canvas.move(self.cursor, x, y)
 
-    def move_by(self, x: int, y: int):
-        pass
-
-    def get_center(self) -> Tuple[float, float, float, float]:
-        return self.canvas.coords(self.cursor)
+    def get_center(self) -> Point:
+        x1, y1, x2, y2 = self.canvas.coords(self.cursor)
+        return Point(x1 + self.radius, y1 + self.radius)
 
 
 class OneDimensionControlExperiment:
@@ -50,9 +64,13 @@ class OneDimensionControlExperiment:
 
 if __name__ == "__main__":
     experiment = OneDimensionControlExperiment()
-    y = 0
+    y = 1
+    experiment.cursor.move_to(Point(x=200))
     while True:
-        y += 1
+        y += 0.1
         experiment.update()
-        experiment.cursor.move_to(0, y)
-        time.sleep(0.25)
+        experiment.cursor.move_by(0, y)
+        time.sleep(0.033)
+        if y > 10:
+            break
+    print(experiment.cursor.get_center())
