@@ -6,20 +6,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class LinePlot:
+class TkPlot:
     def __init__(self, canvas: sg.tk.Canvas):
         self.canvas = canvas
-
-        fig, self.axes = plt.subplots()
-        # self.axes.grid(True)
+        fig, self.axis = plt.subplots()
         self.figure = FigureCanvasTkAgg(fig, self.canvas)
         self.figure.draw()
         self.figure.get_tk_widget().pack(side="top", fill="both", expand=1)
 
+
+class LinePlot(TkPlot):
+    def __init__(self, canvas: sg.tk.Canvas):
+        super(LinePlot, self).__init__(canvas)
+
     def update(self, x: np.array, y: np.array):
-        self.axes.cla()
-        # self.axes.grid(True)
-        self.axes.plot(x, y)
+        self.axis.cla()
+        self.axis.plot(x, y)
         self.figure.draw()
 
 
