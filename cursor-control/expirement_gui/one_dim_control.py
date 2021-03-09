@@ -139,7 +139,12 @@ class SquareTarget:
 
 class OneDimensionControlExperiment:
     def __init__(self):
-        layout = [[sg.Canvas(size=(400, 800), background_color="black", key="canvas")]]
+        layout = [
+            [
+                sg.Canvas(size=(400, 800), background_color="black", key="canvas"),
+                sg.Canvas(size=(400, 800), background_color="white", key="plots"),
+            ],
+        ]
         self.window = sg.Window(
             "1D Cursor Control Experiment",
             layout,
@@ -147,6 +152,7 @@ class OneDimensionControlExperiment:
             disable_close=True,
         )
         self.canvas: sg.tk.Canvas = self.window["canvas"].TKCanvas
+        self.plots_canvas: sg.tk.Canvas = self.window["plots"].TKCanvas
         self.cursor = VelocityCursor(self.canvas)
         self.cursor_starting_point = Point(200, 400)
         self.cursor.move_to(self.cursor_starting_point)

@@ -88,14 +88,12 @@ if __name__ == "__main__":
 
     canvas_elem_bar = window["bar"]
     canvas_bar = canvas_elem_bar.TKCanvas
-    bar_plot = BandPowerChart(
-        canvas_bar, 0, 1, ["alpha", "beta", "gamma", "foo", "bar"]
-    )
+    bar_plot = BandPowerChart(canvas_bar, 0, 1, ["alpha"])
 
     while True:
         time.sleep(0.01)
         x = range(0, 100)
         y = np.random.rand(100)
-        bar_height = np.random.rand(1)
+        bar_heights = np.random.rand(1)
         line_plot.plot(x, y, alpha=0.5)
-        bar_plot.bar([0.2, 0.3, 0.1, 0.9, 0.7])
+        bar_plot.bar(bar_heights)
