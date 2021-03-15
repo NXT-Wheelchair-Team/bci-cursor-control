@@ -33,6 +33,9 @@ class BoardReader:
         """
         return self.board.get_board_data()
 
+    def get_board_data(self, num_samples: int) -> NDArray[float]:
+        return self.board.get_current_board_data(num_samples)
+
     def get_eeg_channels(self) -> List[int]:
         return self.board.get_eeg_channels(self.board.board_id)
 
