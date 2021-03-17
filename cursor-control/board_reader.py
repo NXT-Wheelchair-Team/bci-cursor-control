@@ -1,4 +1,8 @@
+import logging
+import os
+import threading
 import time
+from datetime import datetime as datetime
 from typing import List
 
 from brainflow.board_shim import BoardShim, BoardIds, BrainFlowInputParams
@@ -7,6 +11,8 @@ from nptyping import NDArray
 DEFAULT_CYTON_SERIAL_PORT = "/dev/ttyUSB0"
 DEFAULT_CYTON_PARAMS = BrainFlowInputParams()
 DEFAULT_CYTON_PARAMS.serial_port = DEFAULT_CYTON_SERIAL_PORT
+
+FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 class BoardReader:
@@ -47,8 +53,54 @@ class BoardReader:
         self.board.release_session()
 
 
+class FileWriter:
+    """
+    Responsible for writing data from the board reader to a file.
+    Operates within a thread, no interaction necessary after construction.
+    """
+
+    def __init__(
+        self,
+        board_reader: BoardReader,
+        out_dir: str = os.path.join(FILE_DIR, "..", "data"),
+    ):
+        self.board_reader = board_reader
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        file_prefix = f"board-{board.board.get_board_id()}"
+        iso_time = datetime.now().isoformat()
+        self.file_name = os.path.join(out_dir, f"{file_prefix}-{iso_time}.txt")
+        self.wrote_header = False
+
+        self.thread.start()
+
+    def _write_header(self):
+        logging.debug("Writing header to file")
+        header = [
+            "%CursorControl board reader raw EEG data",
+            f"%Number of channels = {len(self.board_reader.get_eeg_channels())}",
+            f"%Sample rate = {self.board_reader.get_sampling_rate()}",
+            f"%Board = {BoardIds(self.board_reader.board.get_board_id()).name}",
+        ]
+        self.file.write("\n".join(header))
+
+    def _run(self):
+        """
+        Entry-point for the thread.
+        """
+        with open(self.file_name, "w") as self.file:
+            while True:
+                if not self.wrote_header:
+                    self._write_header()
+                    self.wrote_header = True
+
+                self.file.flush()
+                time.sleep(0.1)
+
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     board = BoardReader()
+    file_write = FileWriter(board)
     with board:  # session is open and stream running within this block
         time.sleep(2.5)
         data = board.pop_board_data()  # pops all available data from buffer
