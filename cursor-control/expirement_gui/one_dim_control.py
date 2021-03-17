@@ -8,8 +8,6 @@ import PySimpleGUI as sg
 DEFAULT_CURSOR_RADIUS = 10
 DEFAULT_TARGET_SIDE_LENGTH = 100
 
-logging.basicConfig(level=logging.DEBUG)
-
 
 @dataclass
 class Point:
@@ -176,6 +174,7 @@ class OneDimensionControlExperiment:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     experiment = OneDimensionControlExperiment()
     experiment.cursor.change_velocity_by(-60)
     while True:
