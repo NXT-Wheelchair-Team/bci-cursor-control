@@ -5,8 +5,14 @@ import time
 from datetime import datetime as datetime
 from typing import List
 
-from brainflow.board_shim import BoardShim, BoardIds, BrainFlowInputParams
+from brainflow.board_shim import (
+    BoardShim,
+    BoardIds,
+    BrainFlowInputParams,
+    BrainFlowError,
+)
 from nptyping import NDArray
+import numpy
 
 DEFAULT_CYTON_SERIAL_PORT = "/dev/ttyUSB0"
 DEFAULT_CYTON_PARAMS = BrainFlowInputParams()
@@ -59,6 +65,8 @@ class FileWriter:
     Operates within a thread, no interaction necessary after construction.
     """
 
+    WRITE_INTERVAL_S = 0.1
+
     def __init__(
         self,
         board_reader: BoardReader,
@@ -70,6 +78,7 @@ class FileWriter:
         iso_time = datetime.now().isoformat()
         self.file_name = os.path.join(out_dir, f"{file_prefix}-{iso_time}.txt")
         self.wrote_header = False
+        self.latest_timestamp = None
 
         self.thread.start()
 
@@ -82,19 +91,43 @@ class FileWriter:
             f"%Board = {BoardIds(self.board_reader.board.get_board_id()).name}",
         ]
         self.file.write("\n".join(header))
+        self.file.write("\n")
+
+    def _write_new_data(self):
+        logging.debug("Acquiring new data to write to file")
+        try:
+            data = self.board_reader.get_board_data(self.board_reader.buffer_capacity)
+            if len(data) == 0:
+                return
+            if self.latest_timestamp is not None:
+                new_data_start = (
+                    int(numpy.where(data[22] == self.latest_timestamp)[0]) + 1
+                )
+                data = data[:, new_data_start:]
+            self.latest_timestamp = data[22][-1]
+            for idx in range(len(data[0])):
+                for channel in data:
+                    self.file.write(f"{channel[idx]},")
+                self.file.write("\n")
+        except BrainFlowError as e:
+            logging.debug(f"Quietly handling BrainFlowError: {e}")
+            return
 
     def _run(self):
         """
         Entry-point for the thread.
         """
+        time.sleep(3)
         with open(self.file_name, "w") as self.file:
             while True:
                 if not self.wrote_header:
                     self._write_header()
                     self.wrote_header = True
 
+                self._write_new_data()
+
                 self.file.flush()
-                time.sleep(0.1)
+                time.sleep(self.WRITE_INTERVAL_S)
 
 
 if __name__ == "__main__":
@@ -103,15 +136,17 @@ if __name__ == "__main__":
     file_write = FileWriter(board)
     with board:  # session is open and stream running within this block
         time.sleep(2.5)
-        data = board.pop_board_data()  # pops all available data from buffer
+        data = board.get_board_data(int(250 * 2.5))  # gets samples from buffer
         print(len(data[0]) / 250)  # ~2.5 seconds of data
         time.sleep(3)
-        data = board.pop_board_data()
+        data = board.get_board_data(int(250 * 3))
         print(len(data[0]) / 250)  # ~3 seconds of data
 
     # board session and stream are now closed, but can use same object again
     with board:
         time.sleep(1)
-        data = board.pop_board_data()
+        data = board.get_board_data(int(250 * 1))
         print(len(data[0]) / 250)
         print(data)
+
+    file_write.thread.join()

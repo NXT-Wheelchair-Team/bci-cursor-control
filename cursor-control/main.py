@@ -18,9 +18,12 @@ def pre_experiment(board: board_reader.BoardReader, band_power_chart) -> float:
     """
     :return: average band power for pre-experiment phase
     """
+    print(
+        f"Taking PSD baseline before start, will take {PRE_EXPERIMENT_AVG_TIME_S} seconds"
+    )
     time.sleep(PRE_EXPERIMENT_AVG_TIME_S)
     data = board.get_board_data(PRE_EXPERIMENT_AVG_TIME_S * SAMP_RATE)
-    c3 = data[channels["c3"]]
+    c3 = data[channels["c3"]] - data[channels["cz"]]
     DataFilter.detrend(c3, DetrendOperations.LINEAR.value)
     psd = DataFilter.get_psd_welch(
         c3,
@@ -40,11 +43,12 @@ def single_run_experiment(
     one_dim_experiment: one_dim.OneDimensionControlExperiment,
     band_power_avg: float,
 ):
+    print("Starting experiment")
     time_start = time.time()
-    while time.time() - time_start < 10:
+    while time.time() - time_start < 20:
         time.sleep(0.1)
         data = board.get_board_data(SAMP_RATE * 2)
-        c3 = data[channels["c3"]]
+        c3 = data[channels["c3"]] - data[channels["cz"]]
         DataFilter.detrend(c3, DetrendOperations.LINEAR.value)
         psd = DataFilter.get_psd_welch(
             c3,
@@ -59,16 +63,18 @@ def single_run_experiment(
         )
         band_power_chart.bar([band_power_alpha])
         if band_power_alpha > band_power_avg:
-            one_dim_experiment.cursor.set_velocity(5)
+            one_dim_experiment.cursor.set_velocity(20)
         else:
-            one_dim_experiment.cursor.set_velocity(-5)
+            one_dim_experiment.cursor.set_velocity(-20)
+        one_dim_experiment.update()
+    print("Resetting GUI")
     one_dim_experiment.reset()
 
 
 def main():
     one_dim_experiment = one_dim.OneDimensionControlExperiment()
     band_power_chart = tk_plots.BandPowerChart(
-        one_dim_experiment.plots_canvas, 0, 5, ["10-12 Hz"]
+        one_dim_experiment.plots_canvas, 0, 10, ["10-12 Hz"]
     )
     board = board_reader.BoardReader()  # defaults to Cyton
     with board:
@@ -76,6 +82,8 @@ def main():
         print(f"Average band power 10-12Hz = {average}")
         for _ in range(0, 10):
             single_run_experiment(board, band_power_chart, one_dim_experiment, average)
+            print("Waiting 3 seconds before next experiment")
+            time.sleep(3)
 
 
 # TODO: hook alpha band power into experimental gui based on average before experiment start
