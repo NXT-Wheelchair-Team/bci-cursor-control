@@ -9,6 +9,7 @@ black = "*"
 [packages]
 brainflow = "~=3.9"
 pysimplegui = "~=4.34"
+mne = "*"
 
 [requires]
 python_version = "3.8"
