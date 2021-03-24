@@ -126,8 +126,11 @@ class FileWriter:
                 data = data[:, new_data_start:]
             self.latest_timestamp = data[self.timestamp_channel][-1]
             for idx in range(len(data[0])):
+                data_for_line = []
                 for channel in data:
-                    self.file.write(f"{channel[idx]},")
+                    data_for_line.append(str(channel[idx]))
+                assert len(data_for_line) > 0
+                self.file.write(",".join(data_for_line))
                 self.file.write("\n")
         except BrainFlowError as e:
             logging.debug(f"Quietly handling BrainFlowError: {e}")
