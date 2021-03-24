@@ -97,6 +97,16 @@ class FileWriter:
         self.file.write("\n".join(header))
         self.file.write("\n")
 
+    def _get_index_for_timestamp(self, data: Array, timestamp: float) -> int:
+        """
+        :return: index of the timestamp in the array, -1 if does not exist in array
+        """
+        last_data_where: Array = numpy.where(
+            data[self.timestamp_channel] == self.latest_timestamp
+        )[0]
+        last_data_index: int = -1 if len(last_data_where) == 0 else last_data_where[0]
+        return last_data_index
+
     def _write_new_data(self):
         logging.debug("Acquiring new data to write to file")
         try:
@@ -104,16 +114,14 @@ class FileWriter:
             if len(data) == 0:
                 return
             if self.latest_timestamp is not None:
-                last_data_where: Array = numpy.where(
-                    data[self.timestamp_channel] == self.latest_timestamp
-                )[0]
-                last_data_index: int = (
-                    0 if len(last_data_where) == 0 else last_data_where[0]
+                last_data_index = self._get_index_for_timestamp(
+                    data, self.latest_timestamp
                 )
-                if last_data_index == 0:
+                if last_data_index == -1:
                     logging.warning(
                         "Last data no longer in buffer - FileWriter is getting behind and may have lost data"
                     )
+                    last_data_index = 0
                 new_data_start = last_data_index + 1
                 data = data[:, new_data_start:]
             self.latest_timestamp = data[self.timestamp_channel][-1]
