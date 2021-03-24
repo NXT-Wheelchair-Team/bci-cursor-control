@@ -75,7 +75,7 @@ class FileWriter:
     ):
         self.board_reader = board_reader
         self.thread = threading.Thread(target=self._run, daemon=True)
-        file_prefix = f"board-{board.board.get_board_id()}"
+        file_prefix = f"board-{self.board_reader.board.get_board_id()}"
         iso_time = datetime.now().isoformat()
         self.file_name = os.path.join(out_dir, f"{file_prefix}-{iso_time}.txt")
         self.wrote_header = False
