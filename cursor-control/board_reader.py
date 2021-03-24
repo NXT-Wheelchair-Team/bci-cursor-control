@@ -5,6 +5,7 @@ import time
 from datetime import datetime as datetime
 from typing import List
 
+import numpy
 from brainflow.board_shim import (
     BoardShim,
     BoardIds,
@@ -12,7 +13,7 @@ from brainflow.board_shim import (
     BrainFlowError,
 )
 from nptyping import NDArray
-import numpy
+from nptyping.array import Array
 
 DEFAULT_CYTON_SERIAL_PORT = "/dev/ttyUSB0"
 DEFAULT_CYTON_PARAMS = BrainFlowInputParams()
@@ -79,6 +80,9 @@ class FileWriter:
         self.file_name = os.path.join(out_dir, f"{file_prefix}-{iso_time}.txt")
         self.wrote_header = False
         self.latest_timestamp = None
+        self.timestamp_channel = BoardShim.get_timestamp_channel(
+            self.board_reader.board.get_board_id()
+        )
 
         self.thread.start()
 
@@ -100,11 +104,19 @@ class FileWriter:
             if len(data) == 0:
                 return
             if self.latest_timestamp is not None:
-                new_data_start = (
-                    int(numpy.where(data[22] == self.latest_timestamp)[0]) + 1
+                last_data_where: Array = numpy.where(
+                    data[self.timestamp_channel] == self.latest_timestamp
+                )[0]
+                last_data_index: int = (
+                    0 if len(last_data_where) == 0 else last_data_where[0]
                 )
+                if last_data_index == 0:
+                    logging.warning(
+                        "Last data no longer in buffer - FileWriter is getting behind and may have lost data"
+                    )
+                new_data_start = last_data_index + 1
                 data = data[:, new_data_start:]
-            self.latest_timestamp = data[22][-1]
+            self.latest_timestamp = data[self.timestamp_channel][-1]
             for idx in range(len(data[0])):
                 for channel in data:
                     self.file.write(f"{channel[idx]},")
@@ -134,13 +146,14 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     board = BoardReader()
     file_write = FileWriter(board)
-    with board:  # session is open and stream running within this block
-        time.sleep(2.5)
-        data = board.get_board_data(int(250 * 2.5))  # gets samples from buffer
-        print(len(data[0]) / 250)  # ~2.5 seconds of data
-        time.sleep(3)
-        data = board.get_board_data(int(250 * 3))
-        print(len(data[0]) / 250)  # ~3 seconds of data
+    with board:
+        while True:  # session is open and stream running within this block
+            time.sleep(2.5)
+            data = board.get_board_data(int(250 * 2.5))  # gets samples from buffer
+            print(len(data[0]) / 250)  # ~2.5 seconds of data
+            time.sleep(3)
+            data = board.get_board_data(int(250 * 3))
+            print(len(data[0]) / 250)  # ~3 seconds of data
 
     # board session and stream are now closed, but can use same object again
     with board:
