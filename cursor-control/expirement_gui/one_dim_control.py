@@ -1,5 +1,7 @@
+import random
 import time
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Tuple, Union
 import logging
 
@@ -131,11 +133,15 @@ class SquareTarget:
             return True
         return False
 
-    def reset(self):
-        self.canvas.itemconfig(self.id, fill="grey")
+    def __del__(self):
+        self.canvas.delete(self.id)
 
 
 class OneDimensionControlExperiment:
+    class TargetPos(Enum):
+        TOP = auto()
+        BOTTOM = auto()
+
     def __init__(self):
         layout = [
             [
@@ -156,8 +162,18 @@ class OneDimensionControlExperiment:
         self.cursor = VelocityCursor(self.canvas)
         self.cursor_starting_point = Point(200, 400)
         self.cursor.move_to(self.cursor_starting_point)
-        self.target = SquareTarget(self.canvas, Point(200, 75))
+        self._place_target_random()
         self.target_reached = False
+
+    def _place_target_random(self):
+        """
+        Randomly sets the cursor to the top or bottom of the screen.
+        """
+        self.target_position = random.choice(
+            [self.TargetPos.TOP, self.TargetPos.BOTTOM]
+        )
+        y_pos = 75 if self.target_position == self.TargetPos.TOP else 725
+        self.target = SquareTarget(self.canvas, Point(200, y_pos))
 
     def update(self):
         self.cursor.update()
@@ -169,7 +185,8 @@ class OneDimensionControlExperiment:
     def reset(self):
         self.cursor.move_to(self.cursor_starting_point)
         self.cursor.set_velocity(0)
-        self.target.reset()
+        del self.target
+        self._place_target_random()
         self.target_reached = False
 
     def close(self):
