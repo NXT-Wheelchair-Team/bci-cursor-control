@@ -32,6 +32,12 @@ class Cursor:
         )
         # self.move_by(200, 0)
 
+    @staticmethod
+    def _adjust_for_bounds(pos, low_bound, high_bound):
+        adjusted = pos if pos > low_bound else low_bound
+        adjusted = adjusted if adjusted < high_bound else high_bound
+        return adjusted
+
     def move_to(self, point: Point) -> None:
         """
         Move the cursor *center* to the specified point.
@@ -44,6 +50,12 @@ class Cursor:
         # shift to cursor center
         x = x - self.radius - 1
         y = y - self.radius - 1
+
+        # prevent going out of bounds
+        x_min, x_max = 0, self.canvas.winfo_width() - (self.radius * 2)
+        y_min, y_max = 0, self.canvas.winfo_height() - (self.radius * 2)
+        x = self._adjust_for_bounds(x, x_min, x_max)
+        y = self._adjust_for_bounds(y, y_min, y_max)
 
         self.canvas.moveto(self.cursor, x, y)
 
