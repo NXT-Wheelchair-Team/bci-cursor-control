@@ -139,7 +139,9 @@ class OneDimensionControlExperiment:
     def __init__(self):
         layout = [
             [
-                sg.Canvas(size=(400, 800), background_color="black", key="canvas"),
+                sg.Canvas(
+                    size=(400, 800), background_color="black", key="cursor_canvas"
+                ),
                 sg.Canvas(size=(400, 800), background_color="white", key="plots"),
             ],
         ]
@@ -149,7 +151,7 @@ class OneDimensionControlExperiment:
             finalize=True,
             disable_close=True,
         )
-        self.canvas: sg.tk.Canvas = self.window["canvas"].TKCanvas
+        self.canvas: sg.tk.Canvas = self.window["cursor_canvas"].TKCanvas
         self.plots_canvas: sg.tk.Canvas = self.window["plots"].TKCanvas
         self.cursor = VelocityCursor(self.canvas)
         self.cursor_starting_point = Point(200, 400)
