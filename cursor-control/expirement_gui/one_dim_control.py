@@ -168,6 +168,7 @@ class OneDimensionControlExperiment:
 
     def reset(self):
         self.cursor.move_to(self.cursor_starting_point)
+        self.cursor.set_velocity(0)
         self.target.reset()
         self.target_reached = False
 
