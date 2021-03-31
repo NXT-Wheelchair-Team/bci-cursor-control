@@ -89,7 +89,6 @@ def main():
 
 # TODO: hook alpha band power into experimental gui based on average before experiment start
 # TODO: add a count down before experiment start
-# TODO: write data collected during experiment to disk for later analysis
 
 
 if __name__ == "__main__":
