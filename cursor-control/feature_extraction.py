@@ -4,10 +4,15 @@ import brainflow as bf
 import numpy as np
 
 
-class PSDPreProcessor:
-    def __init__(self, sample_rate: int, window_size: int = 512, overlap_percentage: float = .5,
-                 window_func: bf.WindowFunctions = bf.WindowFunctions.BLACKMAN_HARRIS,
-                 detrend_operation: bf.DetrendOperations = bf.DetrendOperations.LINEAR):
+class PSDFeatureExtractor:
+    def __init__(
+        self,
+        sample_rate: int,
+        window_size: int = 512,
+        overlap_percentage: float = 0.5,
+        window_func: bf.WindowFunctions = bf.WindowFunctions.BLACKMAN_HARRIS,
+        detrend_operation: bf.DetrendOperations = bf.DetrendOperations.LINEAR,
+    ):
         """
         Calculate PSD of the provided data by the Welch method.
 
@@ -22,7 +27,9 @@ class PSDPreProcessor:
         self.window_func = window_func
         self.detrend_operation = detrend_operation
         self.data: Union[bf.NDArray[bf.Float64], None] = None
-        self.psd: Union[Tuple[bf.NDArray[bf.Float64], bf.NDArray[bf.Float64]], None] = None  # amplitude, frequency pair
+        self.psd: Union[
+            Tuple[bf.NDArray[bf.Float64], bf.NDArray[bf.Float64]], None
+        ] = None  # amplitude, frequency pair
 
     def process_data(self, data: bf.NDArray[bf.Float64]):
         """
@@ -33,23 +40,25 @@ class PSDPreProcessor:
         self.data = np.copy(data)
 
         bf.DataFilter.detrend(self.data, self.detrend_operation)
+        self._process_psd()
 
-    def _process_psd(self, data: bf.NDArray[bf.Float64]) -> Tuple[
-        bf.NDArray[bf.Float64], bf.NDArray[bf.Float64]]:
+    def get_band_power(self, freq_start: float, freq_end: float):
+        assert self.psd is not None
+        return bf.DataFilter.get_band_power(self.psd, freq_start, freq_end)
+
+    def _process_psd(self):
         """
         Calculate PSD of the provided data by the Welch method.
 
         :param data: array of Float64 values
         :return: tuple of amplitudes and corresponding frequencies in form of numpy arrays with Float64 types
         """
+        assert self.data is not None
         overlap_samples = int(self.window_size * self.overlap_percentage)
-        return bf.DataFilter.get_psd_welch(
-            data,
+        self.psd = bf.DataFilter.get_psd_welch(
+            self.data,
             self.window_size,
             overlap_samples,
             self.sample_rate,
-            self.window_func
+            self.window_func,
         )
-
-
-def get_band_power_from_psd
