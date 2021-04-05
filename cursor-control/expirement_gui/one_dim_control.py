@@ -145,6 +145,9 @@ class SquareTarget:
             return True
         return False
 
+    def turn_red(self):
+        self.canvas.itemconfig(self.id, fill="red")
+
     def __del__(self):
         self.canvas.delete(self.id)
 
@@ -193,6 +196,9 @@ class OneDimensionControlExperiment:
             self.cursor.set_velocity(0)
             self.target_reached = True
         self.window.read(timeout=0)
+
+    def notify_target_not_reached(self):
+        self.target.turn_red()
 
     def reset(self):
         self.cursor.move_to(self.cursor_starting_point)

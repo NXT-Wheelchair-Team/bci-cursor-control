@@ -69,7 +69,10 @@ def run_single_trial(
 ):
     print("Starting experiment")
     time_start = time.time()
-    while time.time() - time_start < TRIAL_LENGTH_S:
+    while (
+        time.time() - time_start < TRIAL_LENGTH_S
+        and not one_dim_experiment.target_reached
+    ):
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
         band_power_feature = get_psd_feature(board, psd_extractor, data_len_s=3)
         print(
@@ -81,8 +84,13 @@ def run_single_trial(
         else:
             one_dim_experiment.cursor.set_velocity(-50)
         one_dim_experiment.update()
-    print("Resetting GUI")
-    one_dim_experiment.reset()
+
+    print(f"Target reached: {one_dim_experiment.target_reached}")
+    if not one_dim_experiment.target_reached:
+        one_dim_experiment.notify_target_not_reached()
+        one_dim_experiment.update()
+
+    one_dim_experiment.cursor.set_velocity(0)
 
 
 def main():
@@ -117,6 +125,9 @@ def main():
             )
             print("Waiting 3 seconds before next trial")
             time.sleep(3)
+
+            print("Resetting GUI")
+            one_dim_experiment.reset()
 
 
 # TODO: add a count down before experiment start
