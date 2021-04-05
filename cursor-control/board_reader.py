@@ -44,6 +44,7 @@ class BoardReader:
         Removes and returns all available data in the buffer, up to a max defined by `buffer_capacity`
         :return: list of channels, channels are a list of samples which are floats
         """
+        assert False
         return self.board.get_board_data()
 
     def get_board_data(self, num_samples: int) -> NDArray[float]:
