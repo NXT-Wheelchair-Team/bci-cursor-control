@@ -28,6 +28,19 @@ def get_psd_feature(
     return psd_extractor.get_band_power(BAND_FEATURE_LOW_FREQ, BAND_FEATURE_HIGH_FREQ)
 
 
+def chart_bands(
+    primary_feature,
+    psd_extractor: feature_extraction.PSDFeatureExtractor,
+    band_power_chart: tk_plots.BandPowerChart,
+):
+    standard_bands = [(0.5, 4), (4, 7), (8, 15), (16, 31)]
+    values = [primary_feature]  # start with our primary feature and append others on
+    for band in standard_bands:
+        start_freq, end_freq = band
+        values.append(psd_extractor.get_band_power(start_freq, end_freq))
+    band_power_chart.bar(values)
+
+
 def pre_experiment(
     board: board_reader.BoardReader,
     psd_extractor: feature_extraction.PSDFeatureExtractor,
@@ -43,7 +56,7 @@ def pre_experiment(
     band_power_feature = get_psd_feature(
         board, psd_extractor, PRE_EXPERIMENT_AVG_TIME_S
     )
-    band_power_chart.bar([band_power_feature])
+    chart_bands(band_power_feature, psd_extractor, band_power_chart)
     return band_power_feature
 
 
@@ -58,12 +71,12 @@ def run_single_trial(
     time_start = time.time()
     while time.time() - time_start < TRIAL_LENGTH_S:
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
-        band_power_alpha = get_psd_feature(board, psd_extractor, data_len_s=3)
+        band_power_feature = get_psd_feature(board, psd_extractor, data_len_s=3)
         print(
-            f"Band power 10-12Hz for last {(WINDOW_SIZE_SAMPLES // SAMP_RATE)} seconds: {band_power_alpha} - compared against average {band_power_avg}"
+            f"Band power 10-12Hz for last {(WINDOW_SIZE_SAMPLES // SAMP_RATE)} seconds: {band_power_feature} - compared against average {band_power_avg}"
         )
-        band_power_chart.bar([band_power_alpha])
-        if band_power_alpha > band_power_avg:
+        chart_bands(band_power_feature, psd_extractor, band_power_chart)
+        if band_power_feature > band_power_avg:
             one_dim_experiment.cursor.set_velocity(50)
         else:
             one_dim_experiment.cursor.set_velocity(-50)
@@ -75,7 +88,16 @@ def run_single_trial(
 def main():
     one_dim_experiment = one_dim.OneDimensionControlExperiment()
     band_power_chart = tk_plots.BandPowerChart(
-        one_dim_experiment.plots_canvas, 0, 10, ["10-12 Hz"]
+        one_dim_experiment.plots_canvas,
+        y_min=0,
+        y_max=10,
+        band_labels=[
+            f"{BAND_FEATURE_LOW_FREQ}-{BAND_FEATURE_HIGH_FREQ} Hz",
+            "Delta",
+            "Theta",
+            "Alpha",
+            "Beta",
+        ],
     )
     board = board_reader.BoardReader()  # defaults to Cyton
     board_reader.FileWriter(board)
