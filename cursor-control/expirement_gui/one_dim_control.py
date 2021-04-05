@@ -159,6 +159,7 @@ class OneDimensionControlExperiment:
 
     def __init__(self):
         layout = [
+            [sg.Text(size=(100, 1), key="score_text")],
             [sg.Text(size=(100, 1), key="status_text")],
             [
                 sg.Canvas(
@@ -180,6 +181,8 @@ class OneDimensionControlExperiment:
         self.cursor.move_to(self.cursor_starting_point)
         self._place_target_random()
         self.target_reached = False
+        self.successes = 0
+        self.failures = 0
 
     def _place_target_random(self):
         """
@@ -196,6 +199,10 @@ class OneDimensionControlExperiment:
         if self.target.target_reached(self.cursor.get_center()):
             self.cursor.set_velocity(0)
             self.target_reached = True
+            self.successes += 1
+        self.window["score_text"].update(
+            f"Successes: {self.successes} Failures: {self.failures}"
+        )
         self.window.read(timeout=0)
 
     def write_status_text(self, status: str):
@@ -204,6 +211,7 @@ class OneDimensionControlExperiment:
 
     def notify_target_not_reached(self):
         self.target.turn_red()
+        self.failures += 1
 
     def reset(self):
         self.cursor.move_to(self.cursor_starting_point)
