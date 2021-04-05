@@ -13,6 +13,7 @@ PRE_EXPERIMENT_AVG_TIME_S = 5
 SAMP_RATE = 250
 BAND_FEATURE_LOW_FREQ = 10
 BAND_FEATURE_HIGH_FREQ = 12
+TRIAL_LENGTH_S = 20
 
 
 def get_psd_feature(
@@ -46,7 +47,7 @@ def pre_experiment(
     return band_power_feature
 
 
-def single_run_experiment(
+def run_single_trial(
     board: board_reader.BoardReader,
     psd_extractor: feature_extraction.PSDFeatureExtractor,
     band_power_chart: tk_plots.BandPowerChart,
@@ -55,7 +56,7 @@ def single_run_experiment(
 ):
     print("Starting experiment")
     time_start = time.time()
-    while time.time() - time_start < 20:
+    while time.time() - time_start < TRIAL_LENGTH_S:
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
         band_power_alpha = get_psd_feature(board, psd_extractor, data_len_s=3)
         print(
@@ -85,14 +86,14 @@ def main():
         average = pre_experiment(board, psd_feature_extractor, band_power_chart)
         print(f"Average band power 10-12Hz = {average}")
         for _ in range(0, 10):
-            single_run_experiment(
+            run_single_trial(
                 board,
                 psd_feature_extractor,
                 band_power_chart,
                 one_dim_experiment,
                 average,
             )
-            print("Waiting 3 seconds before next experiment")
+            print("Waiting 3 seconds before next trial")
             time.sleep(3)
 
 
