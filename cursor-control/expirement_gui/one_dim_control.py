@@ -159,6 +159,7 @@ class OneDimensionControlExperiment:
 
     def __init__(self):
         layout = [
+            [sg.Text(size=(100, 1), key="status_text")],
             [
                 sg.Canvas(
                     size=(400, 800), background_color="black", key="cursor_canvas"
@@ -196,6 +197,10 @@ class OneDimensionControlExperiment:
             self.cursor.set_velocity(0)
             self.target_reached = True
         self.window.read(timeout=0)
+
+    def write_status_text(self, status: str):
+        self.window["status_text"].update(status)
+        self.update()
 
     def notify_target_not_reached(self):
         self.target.turn_red()

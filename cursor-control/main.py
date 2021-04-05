@@ -73,6 +73,11 @@ def run_single_trial(
         time.time() - time_start < TRIAL_LENGTH_S
         and not one_dim_experiment.target_reached
     ):
+        time_remaining = int(time_start + TRIAL_LENGTH_S - time.time())
+        one_dim_experiment.write_status_text(
+            f"Trial in progress... {time_remaining} seconds remaining"
+        )
+
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
         band_power_feature = get_psd_feature(board, psd_extractor, data_len_s=3)
         print(
@@ -113,6 +118,7 @@ def main():
         board.get_sampling_rate()
     )
     with board:
+        one_dim_experiment.write_status_text("5 second PSD averaging")
         average = pre_experiment(board, psd_feature_extractor, band_power_chart)
         print(f"Average band power 10-12Hz = {average}")
         for _ in range(0, 10):
