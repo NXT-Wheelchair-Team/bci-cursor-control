@@ -81,13 +81,13 @@ def run_single_trial(
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
         band_power_feature = get_psd_feature(board, psd_extractor, data_len_s=3)
         print(
-            f"Band power 10-12Hz for last {(WINDOW_SIZE_SAMPLES // SAMP_RATE)} seconds: {band_power_feature} - compared against average {band_power_avg}"
+            f"Band power 10-12Hz for last {3} seconds: {band_power_feature} - compared against average {band_power_avg}"
         )
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
         if band_power_feature > band_power_avg:
-            one_dim_experiment.cursor.set_velocity(50)
+            one_dim_experiment.cursor.set_velocity(100)
         else:
-            one_dim_experiment.cursor.set_velocity(-50)
+            one_dim_experiment.cursor.set_velocity(-100)
         one_dim_experiment.update()
 
     print(f"Target reached: {one_dim_experiment.target_reached}")
@@ -121,7 +121,7 @@ def main():
         one_dim_experiment.write_status_text("5 second PSD averaging")
         average = pre_experiment(board, psd_feature_extractor, band_power_chart)
         print(f"Average band power 10-12Hz = {average}")
-        for _ in range(0, 10):
+        for i in range(0, 10):
             run_single_trial(
                 board,
                 psd_feature_extractor,
@@ -133,10 +133,17 @@ def main():
             time.sleep(3)
 
             print("Resetting GUI")
-            one_dim_experiment.reset()
+            if i != 9:  # don't reset at end of experiment
+                one_dim_experiment.reset()
 
-
-# TODO: add a count down before experiment start
+        print("Experiment complete")
+        print(
+            f"Final results:\n"
+            f"\tSuccesses - {one_dim_experiment.successes}"
+            f"\tFailures - {one_dim_experiment.failures}\n"
+            f"\tNum top - {one_dim_experiment.num_top}"
+            f"\t\tNum bottom - {one_dim_experiment.num_bottom}"
+        )
 
 
 if __name__ == "__main__":

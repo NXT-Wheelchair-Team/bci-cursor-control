@@ -179,6 +179,8 @@ class OneDimensionControlExperiment:
         self.cursor = VelocityCursor(self.canvas)
         self.cursor_starting_point = Point(200, 400)
         self.cursor.move_to(self.cursor_starting_point)
+        self.num_top = 0
+        self.num_bottom = 0
         self._place_target_random()
         self.target_reached = False
         self.successes = 0
@@ -191,6 +193,10 @@ class OneDimensionControlExperiment:
         self.target_position = random.choice(
             [self.TargetPos.TOP, self.TargetPos.BOTTOM]
         )
+        if self.target_position == self.TargetPos.TOP:
+            self.num_top += 1
+        elif self.target_position == self.TargetPos.BOTTOM:
+            self.num_bottom += 1
         y_pos = 75 if self.target_position == self.TargetPos.TOP else 725
         self.target = SquareTarget(self.canvas, Point(200, y_pos))
 
