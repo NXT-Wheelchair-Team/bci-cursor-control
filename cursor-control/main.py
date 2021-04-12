@@ -45,6 +45,7 @@ def pre_experiment(
     board: board_reader.BoardReader,
     psd_extractor: feature_extraction.PSDFeatureExtractor,
     band_power_chart,
+    psd_chart: tk_plots.PSDPlot,
 ) -> float:
     """
     :return: average band power for pre-experiment phase
@@ -57,6 +58,7 @@ def pre_experiment(
         board, psd_extractor, PRE_EXPERIMENT_AVG_TIME_S
     )
     chart_bands(band_power_feature, psd_extractor, band_power_chart)
+    psd_chart.plot_psd(psd_extractor.psd)
     return band_power_feature
 
 
@@ -64,6 +66,7 @@ def run_single_trial(
     board: board_reader.BoardReader,
     psd_extractor: feature_extraction.PSDFeatureExtractor,
     band_power_chart: tk_plots.BandPowerChart,
+    psd_chart: tk_plots.PSDPlot,
     one_dim_experiment: one_dim.OneDimensionControlExperiment,
     band_power_avg: float,
 ):
@@ -84,6 +87,7 @@ def run_single_trial(
             f"Band power 10-12Hz for last {3} seconds: {band_power_feature} - compared against average {band_power_avg}"
         )
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
+        psd_chart.plot_psd(psd_extractor.psd)
         if band_power_feature > band_power_avg:
             one_dim_experiment.cursor.set_velocity(100)
         else:
@@ -112,6 +116,10 @@ def main():
             "Beta",
         ],
     )
+    psd_chart = tk_plots.PSDPlot(
+        one_dim_experiment.plots_canvas,
+        highlight_region=(POWER_BAND_LOW, POWER_BAND_HIGH),
+    )
     board = board_reader.BoardReader()  # defaults to Cyton
     board_reader.FileWriter(board)
     psd_feature_extractor = feature_extraction.PSDFeatureExtractor(
@@ -119,13 +127,16 @@ def main():
     )
     with board:
         one_dim_experiment.write_status_text("5 second PSD averaging")
-        average = pre_experiment(board, psd_feature_extractor, band_power_chart)
+        average = pre_experiment(
+            board, psd_feature_extractor, band_power_chart, psd_chart
+        )
         print(f"Average band power 10-12Hz = {average}")
         for i in range(0, 10):
             run_single_trial(
                 board,
                 psd_feature_extractor,
                 band_power_chart,
+                psd_chart,
                 one_dim_experiment,
                 average,
             )

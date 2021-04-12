@@ -1,10 +1,11 @@
 import time
-from typing import List
+from typing import List, Tuple
 
 import PySimpleGUI as sg
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import brainflow as bf
 
 
 class TkPlot:
@@ -27,6 +28,47 @@ class LinePlot(TkPlot):
     def plot(self, *args, **kwargs):
         self.axes.cla()
         self.axes.plot(*args, **kwargs)
+        self.figure.draw()
+
+
+class PSDPlot(TkPlot):
+    def __init__(
+        self,
+        canvas: sg.tk.Canvas,
+        y_label: str = "Power",
+        x_label: str = "Frequency (Hz)",
+        title: str = "Power Spectral Density",
+        y_min: float = 1e-6,
+        y_max: float = 1,
+        x_min: float = 1,
+        x_max: float = 30,
+        highlight_region: Tuple[float, float] = (1, 30),
+    ):
+        super(PSDPlot, self).__init__(canvas)
+        self.y_label = y_label
+        self.x_label = x_label
+        self.title = title
+        self.y_min = y_min
+        self.y_max = y_max
+        self.x_min = x_min
+        self.x_max = x_max
+        self.highlight_region = highlight_region
+
+    def _set_text(self):
+        self.axes.set_title(self.title)
+        self.axes.set_ylabel(self.y_label)
+        self.axes.set_xlabel(self.x_label)
+
+    def plot_psd(self, psd: Tuple[bf.NDArray[bf.Float64], bf.NDArray[bf.Float64]]):
+        self.axes.cla()
+        self.axes.set_yscale("log")
+        self._set_text()
+        self.axes.plot(psd[1], psd[0])
+        self.axes.set_ylim([self.y_min, self.y_max])
+        self.axes.set_xlim([self.x_min, self.x_max])
+        self.axes.axvspan(
+            self.highlight_region[0], self.highlight_region[1], color="green", alpha=0.5
+        )
         self.figure.draw()
 
 
@@ -84,7 +126,7 @@ if __name__ == "__main__":
 
     canvas_elem_line = window["line"]
     canvas_line = canvas_elem_line.TKCanvas
-    line_plot = LinePlot(canvas_line)
+    line_plot = PSDPlot(canvas_line)
 
     canvas_elem_bar = window["bar"]
     canvas_bar = canvas_elem_bar.TKCanvas
@@ -95,5 +137,5 @@ if __name__ == "__main__":
         x = range(0, 100)
         y = np.random.rand(100)
         bar_heights = np.random.rand(1)
-        line_plot.plot(x, y, alpha=0.5)
+        line_plot.plot_psd((y, x))
         bar_plot.bar(bar_heights)
