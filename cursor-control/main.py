@@ -89,9 +89,9 @@ def run_single_trial(
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
         psd_chart.plot_psd(psd_extractor.psd)
         if band_power_feature > band_power_avg:
-            one_dim_experiment.cursor.set_velocity(100)
+            one_dim_experiment.cursor.set_velocity(100)  # down
         else:
-            one_dim_experiment.cursor.set_velocity(-100)
+            one_dim_experiment.cursor.set_velocity(-100)  # up
         one_dim_experiment.update()
 
     print(f"Target reached: {one_dim_experiment.target_reached}")
@@ -103,7 +103,7 @@ def run_single_trial(
 
 
 def main():
-    one_dim_experiment = one_dim.OneDimensionControlExperiment()
+    one_dim_experiment = one_dim.OneDimensionControlExperiment(num_trials=10)
     band_power_chart = tk_plots.BandPowerChart(
         one_dim_experiment.plots_canvas,
         y_min=0,
@@ -127,9 +127,11 @@ def main():
     )
     with board:
         one_dim_experiment.write_status_text("5 second PSD averaging")
-        average = pre_experiment(
-            board, psd_feature_extractor, band_power_chart, psd_chart
-        )
+        # average = pre_experiment(
+        #     board, psd_feature_extractor, band_power_chart, psd_chart
+        # )
+        time.sleep(3)
+        average = 1.5
         print(f"Average band power 10-12Hz = {average}")
         for i in range(0, 10):
             run_single_trial(
@@ -152,8 +154,8 @@ def main():
             f"Final results:\n"
             f"\tSuccesses - {one_dim_experiment.successes}"
             f"\tFailures - {one_dim_experiment.failures}\n"
-            f"\tNum top - {one_dim_experiment.num_top}"
-            f"\t\tNum bottom - {one_dim_experiment.num_bottom}"
+            f"\tNum top - 5"
+            f"\t\tNum bottom - 5"
         )
 
 

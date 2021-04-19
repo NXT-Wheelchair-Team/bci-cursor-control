@@ -157,7 +157,7 @@ class OneDimensionControlExperiment:
         TOP = auto()
         BOTTOM = auto()
 
-    def __init__(self):
+    def __init__(self, num_trials=10):
         layout = [
             [sg.Text(size=(100, 1), key="score_text")],
             [sg.Text(size=(100, 1), key="status_text")],
@@ -179,24 +179,25 @@ class OneDimensionControlExperiment:
         self.cursor = VelocityCursor(self.canvas)
         self.cursor_starting_point = Point(200, 400)
         self.cursor.move_to(self.cursor_starting_point)
-        self.num_top = 0
-        self.num_bottom = 0
-        self._place_target_random()
         self.target_reached = False
+        self.trial_iter = 0
         self.successes = 0
         self.failures = 0
+
+        num_each_target = num_trials // 2
+        self.target_array = [self.TargetPos.TOP for _ in range(num_each_target)]
+        self.target_array.extend(
+            [self.TargetPos.BOTTOM for _ in range(num_each_target)]
+        )
+        random.shuffle(self.target_array)
+
+        self._place_target_random()
 
     def _place_target_random(self):
         """
         Randomly sets the cursor to the top or bottom of the screen.
         """
-        self.target_position = random.choice(
-            [self.TargetPos.TOP, self.TargetPos.BOTTOM]
-        )
-        if self.target_position == self.TargetPos.TOP:
-            self.num_top += 1
-        elif self.target_position == self.TargetPos.BOTTOM:
-            self.num_bottom += 1
+        self.target_position = self.target_array[self.trial_iter]
         y_pos = 75 if self.target_position == self.TargetPos.TOP else 725
         self.target = SquareTarget(self.canvas, Point(200, y_pos))
 
@@ -223,6 +224,7 @@ class OneDimensionControlExperiment:
         self.cursor.move_to(self.cursor_starting_point)
         self.cursor.set_velocity(0)
         del self.target
+        self.trial_iter += 1
         self._place_target_random()
         self.target_reached = False
 
