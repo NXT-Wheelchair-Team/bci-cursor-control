@@ -13,7 +13,7 @@ PRE_EXPERIMENT_AVG_TIME_S = 5
 SAMP_RATE = 250
 BAND_FEATURE_LOW_FREQ = 10
 BAND_FEATURE_HIGH_FREQ = 12
-TRIAL_LENGTH_S = 20
+TRIAL_LENGTH_S = 10
 
 
 def get_psd_feature(
@@ -89,9 +89,9 @@ def run_single_trial(
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
         psd_chart.plot_psd(psd_extractor.psd)
         if band_power_feature > band_power_avg:
-            one_dim_experiment.cursor.set_velocity(100)  # down
+            one_dim_experiment.cursor.set_velocity(150)  # down
         else:
-            one_dim_experiment.cursor.set_velocity(-100)  # up
+            one_dim_experiment.cursor.set_velocity(-150)  # up
         one_dim_experiment.update()
 
     print(f"Target reached: {one_dim_experiment.target_reached}")
@@ -131,7 +131,7 @@ def main():
         #     board, psd_feature_extractor, band_power_chart, psd_chart
         # )
         time.sleep(3)
-        average = 1.5
+        average = 1.35
         print(f"Average band power 10-12Hz = {average}")
         for i in range(0, 10):
             run_single_trial(
@@ -152,8 +152,8 @@ def main():
         print("Experiment complete")
         print(
             f"Final results:\n"
-            f"\tSuccesses - {one_dim_experiment.successes}"
-            f"\tFailures - {one_dim_experiment.failures}\n"
+            f"\tTop hit: {one_dim_experiment.top_hit}"
+            f"\tBottom hit - {one_dim_experiment.bottom_hit}\n"
             f"\tNum top - 5"
             f"\t\tNum bottom - 5"
         )

@@ -181,7 +181,8 @@ class OneDimensionControlExperiment:
         self.cursor.move_to(self.cursor_starting_point)
         self.target_reached = False
         self.trial_iter = 0
-        self.successes = 0
+        self.top_hit = 0
+        self.bottom_hit = 0
         self.failures = 0
 
         num_each_target = num_trials // 2
@@ -206,9 +207,12 @@ class OneDimensionControlExperiment:
         if self.target.target_reached(self.cursor.get_center()):
             self.cursor.set_velocity(0)
             self.target_reached = True
-            self.successes += 1
+            if self.target_position == self.TargetPos.TOP:
+                self.top_hit += 1
+            else:
+                self.bottom_hit += 1
         self.window["score_text"].update(
-            f"Successes: {self.successes} Failures: {self.failures}"
+            f"Successes: {self.top_hit + self.bottom_hit} Failures: {self.failures}"
         )
         self.window.read(timeout=0)
 
