@@ -1,9 +1,12 @@
 import time
+from typing import List, Dict
 
 import board_reader
 import expirement_gui.one_dim_control as one_dim
 import expirement_gui.tk_plots as tk_plots
 import feature_extraction
+import matplotlib.pyplot as plt
+from scipy import stats
 
 channels = {"o1": 1, "c3": 2, "fp2": 3, "fp1": 4, "c4": 5, "cz": 6, "fz": 7, "o2": 8}
 POWER_BAND_LOW = 10
@@ -14,6 +17,7 @@ SAMP_RATE = 250
 BAND_FEATURE_LOW_FREQ = 10
 BAND_FEATURE_HIGH_FREQ = 12
 TRIAL_LENGTH_S = 10
+NUM_TRIALS = 6
 
 
 def get_psd_feature(
@@ -69,7 +73,9 @@ def run_single_trial(
     psd_chart: tk_plots.PSDPlot,
     one_dim_experiment: one_dim.OneDimensionControlExperiment,
     band_power_avg: float,
-):
+) -> List[float]:
+    band_power_values = []
+
     print("Starting experiment")
     time_start = time.time()
     while (
@@ -86,6 +92,7 @@ def run_single_trial(
         print(
             f"Band power 10-12Hz for last {3} seconds: {band_power_feature} - compared against average {band_power_avg}"
         )
+        band_power_values.append(band_power_feature)
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
         psd_chart.plot_psd(psd_extractor.psd)
         if band_power_feature > band_power_avg:
@@ -101,9 +108,18 @@ def run_single_trial(
 
     one_dim_experiment.cursor.set_velocity(0)
 
+    return band_power_values
+
 
 def main():
-    one_dim_experiment = one_dim.OneDimensionControlExperiment(num_trials=10)
+    band_power_values_all_trials: Dict[
+        one_dim.OneDimensionControlExperiment.TargetPos, List[float]
+    ] = {
+        one_dim.OneDimensionControlExperiment.TargetPos.TOP: [],
+        one_dim.OneDimensionControlExperiment.TargetPos.BOTTOM: [],
+    }
+
+    one_dim_experiment = one_dim.OneDimensionControlExperiment(num_trials=NUM_TRIALS)
     band_power_chart = tk_plots.BandPowerChart(
         one_dim_experiment.plots_canvas,
         y_min=0,
@@ -131,10 +147,10 @@ def main():
         #     board, psd_feature_extractor, band_power_chart, psd_chart
         # )
         time.sleep(3)
-        average = 1.35
+        average = 1.1
         print(f"Average band power 10-12Hz = {average}")
-        for i in range(0, 10):
-            run_single_trial(
+        for i in range(0, NUM_TRIALS):
+            band_power_values = run_single_trial(
                 board,
                 psd_feature_extractor,
                 band_power_chart,
@@ -142,11 +158,15 @@ def main():
                 one_dim_experiment,
                 average,
             )
+            band_power_values_all_trials[one_dim_experiment.target_position].extend(
+                band_power_values
+            )
+
             print("Waiting 3 seconds before next trial")
             time.sleep(3)
 
             print("Resetting GUI")
-            if i != 9:  # don't reset at end of experiment
+            if i != NUM_TRIALS - 1:  # don't reset at end of experiment
                 one_dim_experiment.reset()
 
         print("Experiment complete")
@@ -156,6 +176,22 @@ def main():
             f"\tBottom hit - {one_dim_experiment.bottom_hit}\n"
             f"\tNum top - 5"
             f"\t\tNum bottom - 5"
+        )
+
+        plt.close("all")
+        plt.hist(band_power_values_all_trials.values(), bins=60, range=(0, 6))
+        plt.show()
+        print("Top target band power stats:")
+        print(
+            stats.describe(
+                band_power_values_all_trials[one_dim_experiment.TargetPos.TOP]
+            )
+        )
+        print("Bottom target band power stats:")
+        print(
+            stats.describe(
+                band_power_values_all_trials[one_dim_experiment.TargetPos.BOTTOM]
+            )
         )
 
 
