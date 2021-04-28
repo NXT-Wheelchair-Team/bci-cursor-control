@@ -7,6 +7,7 @@ import expirement_gui.tk_plots as tk_plots
 import feature_extraction
 import matplotlib.pyplot as plt
 from scipy import stats
+import seaborn as sns
 
 channels = {"o1": 1, "c3": 2, "fp2": 3, "fp1": 4, "c4": 5, "cz": 6, "fz": 7, "o2": 8}
 POWER_BAND_LOW = 10
@@ -14,10 +15,10 @@ POWER_BAND_HIGH = 12
 WINDOW_SIZE_SAMPLES = 256  # must be a power of two
 PRE_EXPERIMENT_AVG_TIME_S = 5
 SAMP_RATE = 250
-BAND_FEATURE_LOW_FREQ = 10
-BAND_FEATURE_HIGH_FREQ = 12
+BAND_FEATURE_LOW_FREQ = 11
+BAND_FEATURE_HIGH_FREQ = 13
 TRIAL_LENGTH_S = 10
-NUM_TRIALS = 6
+NUM_TRIALS = 20
 
 
 def get_psd_feature(
@@ -95,10 +96,20 @@ def run_single_trial(
         band_power_values.append(band_power_feature)
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
         psd_chart.plot_psd(psd_extractor.psd)
-        if band_power_feature > band_power_avg:
-            one_dim_experiment.cursor.set_velocity(150)  # down
-        else:
-            one_dim_experiment.cursor.set_velocity(-150)  # up
+        velocity = 0
+        if band_power_feature < 1.5:
+            velocity = -150
+        if band_power_feature > 4:
+            velocity = 50
+        if band_power_feature > 6:
+            velocity = 200
+        if band_power_feature > 8:
+            velocity = 400
+        # if band_power_feature > band_power_avg:
+        #     one_dim_experiment.cursor.set_velocity(150)  # down
+        # else:
+        #     one_dim_experiment.cursor.set_velocity(-150)  # up
+        one_dim_experiment.cursor.set_velocity(velocity)
         one_dim_experiment.update()
 
     print(f"Target reached: {one_dim_experiment.target_reached}")
@@ -147,7 +158,7 @@ def main():
         #     board, psd_feature_extractor, band_power_chart, psd_chart
         # )
         time.sleep(3)
-        average = 1.1
+        average = 1
         print(f"Average band power 10-12Hz = {average}")
         for i in range(0, NUM_TRIALS):
             band_power_values = run_single_trial(
@@ -173,13 +184,36 @@ def main():
         print(
             f"Final results:\n"
             f"\tTop hit: {one_dim_experiment.top_hit}"
-            f"\tBottom hit - {one_dim_experiment.bottom_hit}\n"
-            f"\tNum top - 5"
-            f"\t\tNum bottom - 5"
+            f"\t\tBottom hit - {one_dim_experiment.bottom_hit}\n"
+            f"\tNum top - {NUM_TRIALS / 2}"
+            f"\t\tNum bottom - {NUM_TRIALS / 2}"
         )
 
         plt.close("all")
-        plt.hist(band_power_values_all_trials.values(), bins=60, range=(0, 6))
+        # plt.hist(
+        #     band_power_values_all_trials.values(),
+        #     bins=60,
+        #     range=(0, 6),
+        #     label=["TOP", "BOTTOM"],
+        #     density=True,
+        # )
+        for pos in [
+            one_dim.OneDimensionControlExperiment.TargetPos.TOP,
+            one_dim.OneDimensionControlExperiment.TargetPos.BOTTOM,
+        ]:
+            pos_data = band_power_values_all_trials[pos]
+            ax: plt.Axes = sns.distplot(
+                pos_data,
+                hist=False,
+                kde=True,
+                kde_kws={"shade": True, "linewidth": 3},
+                label=f"{pos} - nobs: {len(pos_data)}",
+            )
+            ax.set_xlim(0)
+        plt.xlabel("Power Spectral Density")
+        plt.ylabel("Frequency Density")
+        plt.title("PSD Distribution by Target Position")
+        plt.legend()
         plt.show()
         print("Top target band power stats:")
         print(
