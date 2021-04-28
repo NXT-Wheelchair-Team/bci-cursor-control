@@ -1,22 +1,21 @@
 import time
 from typing import List, Dict
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+
 import board_reader
 import expirement_gui.one_dim_control as one_dim
 import expirement_gui.tk_plots as tk_plots
 import feature_extraction
-import matplotlib.pyplot as plt
-from scipy import stats
-import seaborn as sns
 
 channels = {"o1": 1, "c3": 2, "fp2": 3, "fp1": 4, "c4": 5, "cz": 6, "fz": 7, "o2": 8}
-POWER_BAND_LOW = 10
-POWER_BAND_HIGH = 12
 WINDOW_SIZE_SAMPLES = 256  # must be a power of two
 PRE_EXPERIMENT_AVG_TIME_S = 5
 SAMP_RATE = 250
-BAND_FEATURE_LOW_FREQ = 11
-BAND_FEATURE_HIGH_FREQ = 13
+BAND_FEATURE_LOW_FREQ = 10
+BAND_FEATURE_HIGH_FREQ = 12
 TRIAL_LENGTH_S = 10
 NUM_TRIALS = 20
 
@@ -91,19 +90,19 @@ def run_single_trial(
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
         band_power_feature = get_psd_feature(board, psd_extractor, data_len_s=3)
         print(
-            f"Band power 10-12Hz for last {3} seconds: {band_power_feature} - compared against average {band_power_avg}"
+            f"Band power {BAND_FEATURE_LOW_FREQ}-{BAND_FEATURE_HIGH_FREQ}Hz for last {3} seconds: {band_power_feature} - compared against average {band_power_avg}"
         )
         band_power_values.append(band_power_feature)
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
         psd_chart.plot_psd(psd_extractor.psd)
         velocity = 0
-        if band_power_feature < 1.5:
+        if band_power_feature < 2.3:
             velocity = -150
-        if band_power_feature > 4:
-            velocity = 50
         if band_power_feature > 6:
+            velocity = 50
+        if band_power_feature > 10:
             velocity = 200
-        if band_power_feature > 8:
+        if band_power_feature > 15:
             velocity = 400
         # if band_power_feature > band_power_avg:
         #     one_dim_experiment.cursor.set_velocity(150)  # down
@@ -145,7 +144,7 @@ def main():
     )
     psd_chart = tk_plots.PSDPlot(
         one_dim_experiment.plots_canvas,
-        highlight_region=(POWER_BAND_LOW, POWER_BAND_HIGH),
+        highlight_region=(BAND_FEATURE_LOW_FREQ, BAND_FEATURE_HIGH_FREQ),
     )
     board = board_reader.BoardReader()  # defaults to Cyton
     board_reader.FileWriter(board)
@@ -190,13 +189,6 @@ def main():
         )
 
         plt.close("all")
-        # plt.hist(
-        #     band_power_values_all_trials.values(),
-        #     bins=60,
-        #     range=(0, 6),
-        #     label=["TOP", "BOTTOM"],
-        #     density=True,
-        # )
         for pos in [
             one_dim.OneDimensionControlExperiment.TargetPos.TOP,
             one_dim.OneDimensionControlExperiment.TargetPos.BOTTOM,
@@ -209,7 +201,7 @@ def main():
                 kde_kws={"shade": True, "linewidth": 3},
                 label=f"{pos} - nobs: {len(pos_data)}",
             )
-            ax.set_xlim(0)
+            ax.set_xlim(0, 20)
         plt.xlabel("Power Spectral Density")
         plt.ylabel("Frequency Density")
         plt.title("PSD Distribution by Target Position")
