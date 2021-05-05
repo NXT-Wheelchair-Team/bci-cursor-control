@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import time
@@ -39,6 +40,29 @@ with open("../locations.csv", "r") as locations_csv:
                     os.path.abspath(os.path.join("../location-images", row[2])),
                 )
             )
+
+port = "5556"
+context = zmq.Context()
+socket = context.socket(zmq.PAIR)
+socket.connect(f"tcp://localhost:{port}")
+print("connected")
+
+
+def get_json_bytes(message: dict) -> bytes:
+    json_stringified = json.dumps(message)
+    return json_stringified.encode("UTF-8")
+
+
+def parse_message(message: bytes) -> dict:
+    return json.loads(str(message, "UTF-8"))
+
+
+msg = {"State": "CONNECTED", "Reason": "System start"}
+socket.send(get_json_bytes(msg))
+print(f"Sent {msg}")
+msg = socket.recv()
+msg_dict = parse_message(msg)
+print(f"Parsed into dict {msg_dict}")
 
 
 def get_psd_feature(
@@ -184,7 +208,13 @@ def main():
 
             if one_dim_experiment.top_target_reached:
                 print("Reached top target")
-                # TODO send control signals based on location
+                move_to_message = {"MoveTo": location.index}
+                socket.send(get_json_bytes(move_to_message))
+                msg = socket.recv()
+                msg_dict = parse_message(msg)
+                print(f"Parsed into dict {msg_dict}")
+                time.sleep(10000)
+
             elif one_dim_experiment.bottom_target_reached:
                 print("Hit bottom target... continuing")
 
