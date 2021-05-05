@@ -189,7 +189,9 @@ class OneDimensionControlExperiment:
         self.failures = 0
         self.top_target_reached = False
         self.bottom_target_reached = False
-        self.set_destination_option()
+        self.loc_id = self.canvas.create_text(
+            200, 140, fill="white", text="Waiting...", font="Times 14 bold"
+        )
 
         self._place_targets()
 
@@ -205,7 +207,10 @@ class OneDimensionControlExperiment:
         name: str = "Xerox",
         image_fp: str = "/home/adam/github/NXT/bci-cursor-control/location-images/Xerox.png",
     ):
-        self.canvas.create_text(200, 140, fill="white", text=name, font="Times 14 bold")
+        self.canvas.delete(self.loc_id)
+        self.loc_id = self.canvas.create_text(
+            200, 140, fill="white", text=name, font="Times 14 bold"
+        )
         image = Image.open(image_fp)
         image.thumbnail((600, 600))
         bio = io.BytesIO()
