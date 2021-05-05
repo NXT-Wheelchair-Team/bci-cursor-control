@@ -157,7 +157,7 @@ class OneDimensionControlExperiment:
         TOP = auto()
         BOTTOM = auto()
 
-    def __init__(self, num_trials=10):
+    def __init__(self):
         layout = [
             [sg.Text(size=(100, 1), key="score_text")],
             [sg.Text(size=(100, 1), key="status_text")],
@@ -179,58 +179,43 @@ class OneDimensionControlExperiment:
         self.cursor = VelocityCursor(self.canvas)
         self.cursor_starting_point = Point(200, 400)
         self.cursor.move_to(self.cursor_starting_point)
-        self.target_reached = False
         self.trial_iter = 0
-        self.top_hit = 0
-        self.bottom_hit = 0
         self.failures = 0
+        self.top_target_reached = False
+        self.bottom_target_reached = False
 
-        num_each_target = num_trials // 2
-        self.target_array = [self.TargetPos.TOP for _ in range(num_each_target)]
-        self.target_array.extend(
-            [self.TargetPos.BOTTOM for _ in range(num_each_target)]
-        )
-        random.shuffle(self.target_array)
+        self._place_targets()
 
-        self._place_target_random()
-
-    def _place_target_random(self):
+    def _place_targets(self):
         """
         Randomly sets the cursor to the top or bottom of the screen.
         """
-        self.target_position = self.target_array[self.trial_iter]
-        y_pos = 75 if self.target_position == self.TargetPos.TOP else 725
-        self.target = SquareTarget(self.canvas, Point(200, y_pos))
+        self.target_top = SquareTarget(self.canvas, Point(200, 75))
+        self.target_bottom = SquareTarget(self.canvas, Point(200, 725))
 
     def update(self):
         self.cursor.update()
-        if self.target.target_reached(self.cursor.get_center()):
+        if self.target_top.target_reached(self.cursor.get_center()):
             self.cursor.set_velocity(0)
-            self.target_reached = True
-            if self.target_position == self.TargetPos.TOP:
-                self.top_hit += 1
-            else:
-                self.bottom_hit += 1
-        self.window["score_text"].update(
-            f"Successes: {self.top_hit + self.bottom_hit} Failures: {self.failures}"
-        )
+            self.top_target_reached = True
+        elif self.target_bottom.target_reached(self.cursor.get_center()):
+            self.cursor.set_velocity(0)
+            self.bottom_target_reached = True
         self.window.read(timeout=0)
 
     def write_status_text(self, status: str):
         self.window["status_text"].update(status)
         self.update()
 
-    def notify_target_not_reached(self):
-        self.target.turn_red()
-        self.failures += 1
-
     def reset(self):
         self.cursor.move_to(self.cursor_starting_point)
         self.cursor.set_velocity(0)
-        del self.target
+        del self.target_bottom
+        del self.target_top
         self.trial_iter += 1
-        self._place_target_random()
-        self.target_reached = False
+        self._place_targets()
+        self.top_target_reached = False
+        self.bottom_target_reached = False
 
     def close(self):
         self.window.close()

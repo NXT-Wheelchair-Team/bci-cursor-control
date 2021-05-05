@@ -1,9 +1,5 @@
 import time
-from typing import List, Dict
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy import stats
+from typing import List
 
 import board_reader
 import expirement_gui.one_dim_control as one_dim
@@ -78,12 +74,11 @@ def run_single_trial(
     print("Starting experiment")
     time_start = time.time()
     while (
-        time.time() - time_start < TRIAL_LENGTH_S
-        and not one_dim_experiment.target_reached
-    ):
-        time_remaining = int(time_start + TRIAL_LENGTH_S - time.time())
+        not one_dim_experiment.top_target_reached
+        and not one_dim_experiment.bottom_target_reached
+    ):  # while neither target has been hit
         one_dim_experiment.write_status_text(
-            f"Trial in progress... {time_remaining} seconds remaining"
+            f"Select destination or move to next option"
         )
 
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
@@ -110,10 +105,12 @@ def run_single_trial(
         one_dim_experiment.cursor.set_velocity(velocity)
         one_dim_experiment.update()
 
-    print(f"Target reached: {one_dim_experiment.target_reached}")
-    if not one_dim_experiment.target_reached:
-        one_dim_experiment.notify_target_not_reached()
-        one_dim_experiment.update()
+    if one_dim_experiment.top_target_reached:
+        print("Reached top target")
+        # TODO send control signals based on location
+    elif one_dim_experiment.bottom_target_reached:
+        print("Reached bottom target")
+        # TODO continue onto next option
 
     one_dim_experiment.cursor.set_velocity(0)
 
@@ -121,14 +118,7 @@ def run_single_trial(
 
 
 def main():
-    band_power_values_all_trials: Dict[
-        one_dim.OneDimensionControlExperiment.TargetPos, List[float]
-    ] = {
-        one_dim.OneDimensionControlExperiment.TargetPos.TOP: [],
-        one_dim.OneDimensionControlExperiment.TargetPos.BOTTOM: [],
-    }
-
-    one_dim_experiment = one_dim.OneDimensionControlExperiment(num_trials=NUM_TRIALS)
+    one_dim_experiment = one_dim.OneDimensionControlExperiment()
     band_power_chart = tk_plots.BandPowerChart(
         one_dim_experiment.plots_canvas,
         y_min=0,
@@ -159,16 +149,13 @@ def main():
         average = 1
         print(f"Average band power 10-12Hz = {average}")
         for i in range(0, NUM_TRIALS):
-            band_power_values = run_single_trial(
+            run_single_trial(
                 board,
                 psd_feature_extractor,
                 band_power_chart,
                 psd_chart,
                 one_dim_experiment,
                 average,
-            )
-            band_power_values_all_trials[one_dim_experiment.target_position].extend(
-                band_power_values
             )
 
             print("Waiting 3 seconds before next trial")
@@ -177,47 +164,6 @@ def main():
             print("Resetting GUI")
             if i != NUM_TRIALS - 1:  # don't reset at end of experiment
                 one_dim_experiment.reset()
-
-        print("Experiment complete")
-        print(
-            f"Final results:\n"
-            f"\tTop hit: {one_dim_experiment.top_hit}"
-            f"\t\tBottom hit - {one_dim_experiment.bottom_hit}\n"
-            f"\tNum top - {NUM_TRIALS / 2}"
-            f"\t\tNum bottom - {NUM_TRIALS / 2}"
-        )
-
-        plt.close("all")
-        for pos in [
-            one_dim.OneDimensionControlExperiment.TargetPos.TOP,
-            one_dim.OneDimensionControlExperiment.TargetPos.BOTTOM,
-        ]:
-            pos_data = band_power_values_all_trials[pos]
-            ax: plt.Axes = sns.distplot(
-                pos_data,
-                hist=False,
-                kde=True,
-                kde_kws={"shade": True, "linewidth": 3},
-                label=f"{pos} - nobs: {len(pos_data)}",
-            )
-            ax.set_xlim(0, 7.5)
-        plt.xlabel("Power Spectral Density")
-        plt.ylabel("Frequency Density")
-        plt.title("PSD Distribution by Target Position")
-        plt.legend()
-        plt.show()
-        print("Top target band power stats:")
-        print(
-            stats.describe(
-                band_power_values_all_trials[one_dim_experiment.TargetPos.TOP]
-            )
-        )
-        print("Bottom target band power stats:")
-        print(
-            stats.describe(
-                band_power_values_all_trials[one_dim_experiment.TargetPos.BOTTOM]
-            )
-        )
 
 
 if __name__ == "__main__":
