@@ -1,10 +1,9 @@
 import io
-import random
+import logging
 import time
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Tuple, Union
-import logging
+from typing import Union
 
 import PySimpleGUI as sg
 from PIL import Image
@@ -161,8 +160,9 @@ class OneDimensionControlExperiment:
 
     def __init__(self):
         layout = [
-            [sg.Text(size=(100, 1), key="score_text")],
-            [sg.Text(size=(100, 1), key="status_text")],
+            [
+                sg.Text(size=(50, 1), key="status_text"),
+            ],
             [
                 sg.Image(key="image"),
                 sg.Canvas(
@@ -178,6 +178,9 @@ class OneDimensionControlExperiment:
             disable_close=True,
         )
         self.canvas: sg.tk.Canvas = self.window["cursor_canvas"].TKCanvas
+        self.canvas.create_text(
+            100, 150, fill="white", text="Xerox", font="Times 14 bold"
+        )
         self.plots_canvas: sg.tk.Canvas = self.window["plots"].TKCanvas
         self.cursor = VelocityCursor(self.canvas)
         self.cursor_starting_point = Point(200, 400)
