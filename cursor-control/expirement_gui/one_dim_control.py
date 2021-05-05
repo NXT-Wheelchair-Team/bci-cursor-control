@@ -179,7 +179,7 @@ class OneDimensionControlExperiment:
         )
         self.canvas: sg.tk.Canvas = self.window["cursor_canvas"].TKCanvas
         self.canvas.create_text(
-            100, 150, fill="white", text="Xerox", font="Times 14 bold"
+            200, 650, fill="white", text="Next Option", font="Times 14 bold"
         )
         self.plots_canvas: sg.tk.Canvas = self.window["plots"].TKCanvas
         self.cursor = VelocityCursor(self.canvas)
@@ -189,14 +189,7 @@ class OneDimensionControlExperiment:
         self.failures = 0
         self.top_target_reached = False
         self.bottom_target_reached = False
-
-        image = Image.open(
-            "/home/adam/github/NXT/bci-cursor-control/location-images/Xerox.png"
-        )
-        image.thumbnail((600, 600))
-        bio = io.BytesIO()
-        image.save(bio, format="PNG")
-        self.window["image"].update(data=bio.getvalue())
+        self.set_destination_option()
 
         self._place_targets()
 
@@ -206,6 +199,18 @@ class OneDimensionControlExperiment:
         """
         self.target_top = SquareTarget(self.canvas, Point(200, 75))
         self.target_bottom = SquareTarget(self.canvas, Point(200, 725))
+
+    def set_destination_option(
+        self,
+        name: str = "Xerox",
+        image_fp: str = "/home/adam/github/NXT/bci-cursor-control/location-images/Xerox.png",
+    ):
+        self.canvas.create_text(200, 140, fill="white", text=name, font="Times 14 bold")
+        image = Image.open(image_fp)
+        image.thumbnail((600, 600))
+        bio = io.BytesIO()
+        image.save(bio, format="PNG")
+        self.window["image"].update(data=bio.getvalue())
 
     def update(self):
         self.cursor.update()
