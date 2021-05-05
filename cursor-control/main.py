@@ -4,6 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import List
 import csv
+import zmq
 
 import board_reader
 import expirement_gui.one_dim_control as one_dim
@@ -131,12 +132,6 @@ def run_single_trial(
         one_dim_experiment.cursor.set_velocity(velocity)
         one_dim_experiment.update()
 
-    if one_dim_experiment.top_target_reached:
-        print("Reached top target")
-        # TODO send control signals based on location
-    elif one_dim_experiment.bottom_target_reached:
-        print("Hit bottom target")
-
     one_dim_experiment.cursor.set_velocity(0)
 
     return band_power_values
@@ -186,6 +181,12 @@ def main():
                 average,
                 location,
             )
+
+            if one_dim_experiment.top_target_reached:
+                print("Reached top target")
+                # TODO send control signals based on location
+            elif one_dim_experiment.bottom_target_reached:
+                print("Hit bottom target... continuing")
 
             print("Resetting GUI")
             one_dim_experiment.reset()

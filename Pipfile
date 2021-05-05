@@ -10,6 +10,7 @@ black = "*"
 brainflow = "~=3.9"
 pysimplegui = "~=4.34"
 mne = "*"
+pyzmq = "*"
 
 [requires]
 python_version = "3.8"
