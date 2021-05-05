@@ -1,5 +1,9 @@
+import os
+import sys
 import time
+from dataclasses import dataclass
 from typing import List
+import csv
 
 import board_reader
 import expirement_gui.one_dim_control as one_dim
@@ -13,6 +17,27 @@ BAND_FEATURE_LOW_FREQ = 10
 BAND_FEATURE_HIGH_FREQ = 12
 TRIAL_LENGTH_S = 10
 NUM_TRIALS = 20
+
+
+@dataclass
+class Location:
+    index: int
+    name: str
+    image_fp: str
+
+
+LOCATIONS: List[Location] = []
+with open("../locations.csv", "r") as locations_csv:
+    locations_reader = csv.reader(locations_csv)
+    for row in locations_reader:
+        if row[0] != "index":
+            LOCATIONS.append(
+                Location(
+                    int(row[0]),
+                    row[1],
+                    os.path.abspath(os.path.join("../location-images", row[2])),
+                )
+            )
 
 
 def get_psd_feature(
