@@ -1,3 +1,4 @@
+import io
 import random
 import time
 from dataclasses import dataclass
@@ -6,6 +7,7 @@ from typing import Tuple, Union
 import logging
 
 import PySimpleGUI as sg
+from PIL import Image
 
 DEFAULT_CURSOR_RADIUS = 10
 DEFAULT_TARGET_SIDE_LENGTH = 100
@@ -162,6 +164,7 @@ class OneDimensionControlExperiment:
             [sg.Text(size=(100, 1), key="score_text")],
             [sg.Text(size=(100, 1), key="status_text")],
             [
+                sg.Image(key="image"),
                 sg.Canvas(
                     size=(400, 800), background_color="black", key="cursor_canvas"
                 ),
@@ -169,7 +172,7 @@ class OneDimensionControlExperiment:
             ],
         ]
         self.window = sg.Window(
-            "1D Cursor Control Experiment",
+            "Wheelchair Location Selector",
             layout,
             finalize=True,
             disable_close=True,
@@ -183,6 +186,14 @@ class OneDimensionControlExperiment:
         self.failures = 0
         self.top_target_reached = False
         self.bottom_target_reached = False
+
+        image = Image.open(
+            "/home/adam/github/NXT/bci-cursor-control/location-images/Xerox.png"
+        )
+        image.thumbnail((600, 600))
+        bio = io.BytesIO()
+        image.save(bio, format="PNG")
+        self.window["image"].update(data=bio.getvalue())
 
         self._place_targets()
 
