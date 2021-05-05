@@ -106,7 +106,6 @@ def run_single_trial(
         one_dim_experiment.write_status_text(
             f"Select destination or move to next option"
         )
-        one_dim_experiment.set_destination_option(location.name, location.image_fp)
 
         time.sleep(0.1)  # let another tenth of a second worth of data accrue
         band_power_feature = get_psd_feature(board, psd_extractor, data_len_s=3)
@@ -175,6 +174,9 @@ def main():
         average = 1
         print(f"Average band power 10-12Hz = {average}")
         for location in LOCATIONS:
+            one_dim_experiment.set_destination_option(location.name, location.image_fp)
+            one_dim_experiment.update()
+            time.sleep(3)
             run_single_trial(
                 board,
                 psd_feature_extractor,
@@ -184,9 +186,6 @@ def main():
                 average,
                 location,
             )
-
-            print("Waiting 3 seconds before next trial")
-            time.sleep(3)
 
             print("Resetting GUI")
             one_dim_experiment.reset()
