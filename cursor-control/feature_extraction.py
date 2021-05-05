@@ -8,8 +8,8 @@ class PSDFeatureExtractor:
     def __init__(
         self,
         sample_rate: int,
-        window_size: int = 512,
-        overlap_percentage: float = 0.5,
+        window_size: int = 256,
+        overlap_percentage: float = 0.75,
         window_func: bf.WindowFunctions = bf.WindowFunctions.BLACKMAN_HARRIS,
         detrend_operation: bf.DetrendOperations = bf.DetrendOperations.LINEAR,
     ):

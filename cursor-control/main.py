@@ -11,7 +11,6 @@ import expirement_gui.tk_plots as tk_plots
 import feature_extraction
 
 channels = {"o1": 1, "c3": 2, "fp2": 3, "fp1": 4, "c4": 5, "cz": 6, "fz": 7, "o2": 8}
-WINDOW_SIZE_SAMPLES = 256  # must be a power of two
 PRE_EXPERIMENT_AVG_TIME_S = 5
 SAMP_RATE = 250
 BAND_FEATURE_LOW_FREQ = 10
@@ -96,13 +95,13 @@ def run_single_trial(
         chart_bands(band_power_feature, psd_extractor, band_power_chart)
         psd_chart.plot_psd(psd_extractor.psd)
         velocity = 0
-        if band_power_feature < 2.3:
+        if band_power_feature < 1.2:
             velocity = -150
-        if band_power_feature > 6:
+        if band_power_feature > 1.8:
             velocity = 50
-        if band_power_feature > 10:
+        if band_power_feature > 2.1:
             velocity = 200
-        if band_power_feature > 15:
+        if band_power_feature > 4:
             velocity = 400
         # if band_power_feature > band_power_avg:
         #     one_dim_experiment.cursor.set_velocity(150)  # down
@@ -201,7 +200,7 @@ def main():
                 kde_kws={"shade": True, "linewidth": 3},
                 label=f"{pos} - nobs: {len(pos_data)}",
             )
-            ax.set_xlim(0, 20)
+            ax.set_xlim(0, 7.5)
         plt.xlabel("Power Spectral Density")
         plt.ylabel("Frequency Density")
         plt.title("PSD Distribution by Target Position")
